@@ -4,20 +4,44 @@ import helmet from "helmet"
 import morgan from "morgan"
 import mongoose from "mongoose"
 import dotenv from "dotenv";
-
+import passport from "passport";
+import session from "express-session";
+import MongoStore from "connect-mongo";
+import "./config/passport";
 dotenv.config();
 
-const app = express()
+import authRoute from "./routes/auth";
 
-mongoose.connect(process.env.MONGODB_URI!)
+const app = express();
+
+mongoose
+  .connect(process.env.MONGODB_URI!)
   .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error(err))
+  .catch((err) => console.error(err));
 
+app.use(cors());
+app.use(helmet());
+app.use(morgan("dev"));
+app.use(express.json());
 
-app.use(cors())
-app.use(helmet())
-app.use(morgan("dev"))
-app.use(express.json())
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET!,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI! }),
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use("/auth", authRoute);
 
 const PORT = 8080
 app.listen(PORT, () => {
