@@ -2,15 +2,16 @@ import express from "express"
 import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
-import mongoose from "mongoose"
-import dotenv from "dotenv";
+import mongoose from "mongoose";
 import passport from "passport";
 import session from "express-session";
 import MongoStore from "connect-mongo";
 import "./config/passport";
+import dotenv from "dotenv";
 dotenv.config();
 
 import authRoute from "./routes/auth";
+import contractsRoute from "./routes/contracts";
 
 const app = express();
 
@@ -19,7 +20,7 @@ mongoose
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error(err));
 
-app.use(cors());
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(express.json());
@@ -42,6 +43,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/auth", authRoute);
+app.use("/contracts", contractsRoute);
 
 const PORT = 8080
 app.listen(PORT, () => {
